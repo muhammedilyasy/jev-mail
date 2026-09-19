@@ -99,11 +99,14 @@
             <span class="hint">How many to pull per run, newest first. <code>0</code> fetches every message the query matches.</span>
             <input id="s-max" type="number" min="0" step="100" />
           </label>
+          <label>
+            Google OAuth client ID
+            <span class="hint">Only the dashboard needs this — the in-Gmail badges work without it. Create a <b>Web application</b> client in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">Google Cloud</a> and add the redirect URL below to its <b>Authorized redirect URIs</b>.</span>
+            <input id="s-clientid" type="text" placeholder="123456789-abc.apps.googleusercontent.com" spellcheck="false" autocomplete="off" />
+          </label>
           <div class="kv">
-            <div><span>Extension ID</span><code id="s-extid"></code></div>
-            <div><span>OAuth client</span><code id="s-clientid"></code></div>
+            <div><span>Redirect URL</span><code id="s-redirect"></code></div>
           </div>
-          <span class="hint">Gmail access uses the Chrome Extension OAuth client set in <code>manifest.json</code>. Only the dashboard needs it — the in-Gmail badges work without it.</span>
           <button type="button" id="s-signout" class="ghost">Sign out of Gmail</button>
         </fieldset>
 

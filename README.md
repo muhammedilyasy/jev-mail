@@ -51,28 +51,20 @@ the overlay is enough for you.
 
 ### 1. Load the extension
 
-1. Open `chrome://extensions`, turn on **Developer mode**.
-2. **Load unpacked** → pick this folder.
-3. Copy the extension's **ID** (shown on the card). You need it in step 2.
+Same as the quick start: **Load unpacked** on `chrome://extensions`. Then open
+the dashboard, hit the **gear**, and find the **Redirect URL** under *Gmail*. It
+looks like `https://<extension-id>.chromiumapp.org/`. Copy it.
 
-### 2. Create the Gmail OAuth client
+### 2. Create a Google OAuth client
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create (or pick)
    a project and [enable the Gmail API](https://console.cloud.google.com/apis/library/gmail.googleapis.com).
 2. Configure the **OAuth consent screen**: type *External* is fine, and add your
-   own Google account under **Test users** — that is all an unpublished app needs.
-3. **Credentials → Create credentials → OAuth client ID → Chrome Extension**,
-   paste the extension ID from step 1, and create it.
-4. Copy the client ID into `manifest.json`:
-
-   ```json
-   "oauth2": {
-     "client_id": "123456789-abc.apps.googleusercontent.com",
-     "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
-   }
-   ```
-
-5. Reload the extension on `chrome://extensions`.
+   own Google account under **Test users**. That's all an unpublished app needs.
+3. **Credentials → Create credentials → OAuth client ID → Web application**.
+   Under **Authorized redirect URIs**, paste the redirect URL from step 1.
+4. Copy the client ID into **Settings → Gmail → Google OAuth client ID** and
+   save. No files to edit, no reload.
 
 ### 3. Run it
 
@@ -190,15 +182,24 @@ batches are small enough to serve from the worker.
 
 ## Troubleshooting
 
-**"No OAuth client ID in manifest.json"** — step 2 above is incomplete, or you
-forgot to reload the extension afterwards.
+**"No Google OAuth client ID"** — paste one into Settings → Gmail (step 2
+above).
 
-**Gmail authorization fails** — Chrome's identity API needs the browser signed
-in to a Google profile, and some managed Workspace profiles block third-party
-OAuth clients outright. Check that the OAuth client type is *Chrome Extension*,
-that its extension ID matches the one on `chrome://extensions`, and that your
-account is listed under the consent screen's **Test users**. If your admin
-blocks it, the in-Gmail badges still work — they don't use OAuth at all.
+**`redirect_uri_mismatch` from Google** — the client's authorized redirect URI
+doesn't match the one shown in Settings. Unpacked extensions get their ID from
+the folder's location, so **moving or re-downloading the folder changes the
+redirect URL**. Copy the current one from Settings into the client again.
+
+**"Access blocked" or other Gmail authorization failures** — check that the
+client type is *Web application* and that your account is listed under the
+consent screen's **Test users**. Some managed Workspace accounts block
+third-party OAuth clients entirely. If your admin does, the in-Gmail badges
+still work, because they don't use OAuth at all.
+
+**Asked to sign in again** — Google's access tokens last an hour. The extension
+renews them silently while you're signed in to Google in Chrome. You only see
+the popup again if that silent renewal fails, for example after you sign out of
+Google.
 
 **429s from Jev** — lower **Parallel requests**. Requests already retry with
 exponential backoff, so this only matters when you push concurrency high.

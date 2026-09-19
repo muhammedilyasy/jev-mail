@@ -12,14 +12,9 @@
   "host_permissions": [
     "https://gmail.googleapis.com/*",
     "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*",
     "https://api.typesafe.ai/*"
   ],
-  "oauth2": {
-    "client_id": "REPLACE_ME.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/gmail.readonly"
-    ]
-  },
   "background": {
     "service_worker": "src/background/service-worker.js",
     "type": "module"

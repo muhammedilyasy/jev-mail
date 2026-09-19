@@ -24,6 +24,9 @@ export const DEFAULTS = {
   maxEmails: 500, // 0 = every message the query matches
   concurrency: 6,
   categories: DEFAULT_CATEGORIES,
+  // "Web application" OAuth client from Google Cloud. Only the dashboard needs
+  // it; the in-Gmail badges read the page and never touch the Gmail API.
+  googleClientId: '',
   // In-Gmail overlay. Works without any Google Cloud setup: the sender, subject
   // and preview line come straight out of Gmail's DOM.
   overlayEnabled: true,

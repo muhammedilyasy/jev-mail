@@ -1,5 +1,5 @@
 import { loadSettings, saveSettings, DEFAULT_CATEGORIES, DEFAULTS } from '../common/settings.js';
-import { getToken, signOut, manifestClientId, extensionId } from '../common/auth.js';
+import { getToken, signOut, invalidateToken, redirectUrl } from '../common/auth.js';
 import { getAllEmails, clearEmails } from '../common/db.js';
 import { listModels } from '../common/jev.js';
 import { syncInbox, classifyAll } from '../common/pipeline.js';
@@ -508,7 +508,7 @@ function setRunning(running) {
 
 function updateOnboarding() {
   const panel = $('onboarding');
-  const needsClientId = !manifestClientId();
+  const needsClientId = !state.settings.googleClientId.trim();
   const needsKey = !state.settings.jevApiKey.trim();
 
   if (!needsClientId && !needsKey && state.connected) {
@@ -518,8 +518,9 @@ function updateOnboarding() {
 
   const steps = [];
   if (needsClientId) {
-    steps.push(`Create an OAuth client: <a href="https://console.cloud.google.com/apis/library/gmail.googleapis.com" target="_blank" rel="noreferrer">enable the Gmail API</a>, then under <b>Credentials → Create credentials → OAuth client ID</b> choose <b>Chrome Extension</b> and paste this extension's ID: <code>${extensionId()}</code>`);
-    steps.push(`Put the client ID into <code>manifest.json</code> under <code>oauth2.client_id</code>, then reload the extension on <code>chrome://extensions</code>.`);
+    steps.push(`In Google Cloud, <a href="https://console.cloud.google.com/apis/library/gmail.googleapis.com" target="_blank" rel="noreferrer">enable the Gmail API</a> and set up the OAuth consent screen with your account as a test user.`);
+    steps.push(`Under <b>Credentials → Create credentials → OAuth client ID</b>, choose <b>Web application</b> and add this to <b>Authorized redirect URIs</b>: <code>${redirectUrl()}</code>`);
+    steps.push(`Paste the client ID into <b>Settings → Gmail</b>.`);
   }
   if (needsKey) {
     steps.push(`Add your Jev API key from <a href="https://console.typesafe.ai/" target="_blank" rel="noreferrer">console.typesafe.ai</a> in <b>Settings</b>.`);
@@ -548,8 +549,8 @@ function openSettings() {
   $('s-concurrency').value = s.concurrency;
   $('s-query').value = s.gmailQuery;
   $('s-max').value = s.maxEmails;
-  $('s-extid').textContent = extensionId();
-  $('s-clientid').textContent = manifestClientId() || 'not set — see README';
+  $('s-clientid').value = s.googleClientId;
+  $('s-redirect').textContent = redirectUrl();
   $('s-overlay').checked = s.overlayEnabled;
   $('s-overlay-auto').checked = s.overlayAutoClassify;
   $('s-categories').value = s.categories.map((c) => `${c.name}: ${c.description || ''}`.trim()).join('\n');
@@ -572,7 +573,9 @@ function parseCategories(text) {
 }
 
 async function saveSettingsFromForm() {
+  const previousClientId = state.settings.googleClientId;
   state.settings = await saveSettings({
+    googleClientId: $('s-clientid').value.trim(),
     jevApiKey: $('s-key').value.trim(),
     jevModel: $('s-model').value.trim() || DEFAULTS.jevModel,
     concurrency: clamp(Number($('s-concurrency').value) || DEFAULTS.concurrency, 1, 24),
@@ -582,6 +585,9 @@ async function saveSettingsFromForm() {
     overlayAutoClassify: $('s-overlay-auto').checked,
     categories: parseCategories($('s-categories').value)
   });
+
+  // A token minted for another client is useless to this one.
+  if (state.settings.googleClientId !== previousClientId) await invalidateToken();
 
   buildCategoryFilter();
   $('settings').close();

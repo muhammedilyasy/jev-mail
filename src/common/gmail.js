@@ -21,7 +21,7 @@ async function call(path, { signal } = {}) {
     // A cached token that Gmail rejects is worth exactly one retry.
     if (res.status === 401 && !refreshed) {
       refreshed = true;
-      await invalidateToken(token);
+      await invalidateToken();
       continue;
     }
 
