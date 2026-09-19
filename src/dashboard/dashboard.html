@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Jev Mail</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="4.5" width="20" height="15" rx="3.5" />
+          <path d="M3.5 7.5 12 13.5 20.5 7.5" />
+        </svg>
+        <span>Jev Mail</span>
+        <em id="account"></em>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="actions">
+        <input id="search" type="search" placeholder="Search sender or subject" spellcheck="false" />
+        <select id="filter-category"><option value="">All categories</option></select>
+        <select id="filter-priority">
+          <option value="">All priorities</option>
+          <option value="High">High</option>
+          <option value="Normal">Normal</option>
+          <option value="Low">Low</option>
+        </select>
+        <button id="btn-sync" class="ghost" title="Fetch the latest messages from Gmail">Sync</button>
+        <button id="btn-start" class="primary">Start</button>
+        <button id="btn-export" class="ghost" title="Download the table as CSV">Export</button>
+        <button id="btn-settings" class="icon" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 14.2a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V20a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-.97H4a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9.9a1.6 1.6 0 0 0 .97-1.47V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77v.04a1.6 1.6 0 0 0 1.47.97H20a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.47.97z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="progress"><div id="progress-bar"></div></div>
+    <div class="statusline"><span id="status">Ready.</span><button id="btn-log" class="linkish" hidden>Issues</button></div>
+
+    <section id="onboarding" hidden></section>
+
+    <main>
+      <table id="table">
+        <thead>
+          <tr>
+            <th class="col-sender sortable" data-sort="sender">Email</th>
+            <th class="col-subject sortable" data-sort="date"></th>
+            <th class="col-category sortable" data-sort="category">Category</th>
+            <th class="col-priority sortable" data-sort="priority">Priority</th>
+            <th class="col-num sortable" data-sort="spam">Spam</th>
+            <th class="col-num sortable" data-sort="reply">Reply</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p id="empty" class="empty">No messages yet. Connect Gmail and hit Sync.</p>
+    </main>
+
+    <dialog id="settings">
+      <form method="dialog" id="settings-form">
+        <h2>Settings</h2>
+
+        <fieldset>
+          <legend>Jev</legend>
+          <label>
+            API key
+            <span class="hint">From <a href="https://console.typesafe.ai/" target="_blank" rel="noreferrer">console.typesafe.ai</a>. Stored locally, only ever sent to api.typesafe.ai.</span>
+            <span class="row">
+              <input id="s-key" type="password" placeholder="sk-…" autocomplete="off" />
+              <button type="button" id="s-test" class="ghost">Test</button>
+            </span>
+            <span class="test-result" id="s-test-result"></span>
+          </label>
+          <label>
+            Model
+            <input id="s-model" type="text" placeholder="jev-latest" />
+          </label>
+          <label>
+            Parallel requests
+            <span class="hint">Jev allows 1,200 requests/minute. Raise this to go faster, lower it if you see 429s.</span>
+            <input id="s-concurrency" type="number" min="1" max="24" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Gmail</legend>
+          <label>
+            Search query
+            <span class="hint">Any Gmail search, e.g. <code>in:inbox</code>, <code>newer_than:30d</code>, <code>-category:promotions</code>.</span>
+            <input id="s-query" type="text" placeholder="in:inbox" />
+          </label>
+          <label>
+            Max messages
+            <span class="hint">How many to pull per run, newest first. <code>0</code> fetches every message the query matches.</span>
+            <input id="s-max" type="number" min="0" step="100" />
+          </label>
+          <div class="kv">
+            <div><span>Extension ID</span><code id="s-extid"></code></div>
+            <div><span>OAuth client</span><code id="s-clientid"></code></div>
+          </div>
+          <span class="hint">Gmail access uses the Chrome Extension OAuth client set in <code>manifest.json</code>. Only the dashboard needs it — the in-Gmail badges work without it.</span>
+          <button type="button" id="s-signout" class="ghost">Sign out of Gmail</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>In Gmail</legend>
+          <label class="check">
+            <input id="s-overlay" type="checkbox" />
+            <span>Show results on Gmail's thread list
+              <span class="hint">Adds the four badges to each row on mail.google.com. Needs no Google Cloud setup — it reads the sender, subject and preview straight off the page.</span>
+            </span>
+          </label>
+          <label class="check">
+            <input id="s-overlay-auto" type="checkbox" />
+            <span>Classify rows as they appear
+              <span class="hint">Sends anything Jev has not seen yet, up to 40 rows at a time. Turn this off to show only what a dashboard run already produced.</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Categories</legend>
+          <span class="hint">One per line, <code>Name: what belongs in it</code>. The description is the rubric Jev scores against, so be specific.</span>
+          <textarea id="s-categories" rows="12" spellcheck="false"></textarea>
+        </fieldset>
+
+        <footer>
+          <button type="button" id="s-reset" class="danger-ghost">Clear all data</button>
+          <span class="spacer"></span>
+          <button type="button" id="s-cancel" class="ghost">Cancel</button>
+          <button type="button" id="s-save" class="primary">Save</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="logdialog">
+      <h2>Issues</h2>
+      <pre id="logbody"></pre>
+      <footer><button type="button" id="log-close" class="ghost">Close</button></footer>
+    </dialog>
+
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

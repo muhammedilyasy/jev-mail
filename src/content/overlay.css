@@ -1,0 +1,84 @@
+/* Injected into Gmail. Everything is namespaced under .jev- and scoped tightly
+   so it cannot leak into Gmail's own styles. */
+
+/* Reserve a strip at the right of the subject cell and park the badges in it,
+   so Gmail's subject and preview ellipsis before they collide. */
+td.jev-host {
+  position: relative !important;
+  padding-right: 246px !important;
+}
+
+.jev-badges {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  justify-content: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.jev-badges > span {
+  border-radius: 4px;
+  padding: 0 6px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.jev-cat { background: #eceae7; color: #5f5b55; }
+
+.jev-pri { background: #f1f0ee; color: #6b6762; }
+.jev-pri.jev-Normal { background: #e4edfd; color: #1a56db; }
+.jev-pri.jev-High { background: #fdf0d4; color: #9a5b00; }
+
+.jev-m {
+  background: transparent;
+  color: #8d8a85;
+  padding: 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+.jev-m.jev-mid { color: #b45309; }
+.jev-m.jev-hot { color: #c2410c; font-weight: 500; }
+
+.jev-pending {
+  background: transparent;
+  color: #b7b3ad;
+  padding: 0 2px;
+  animation: jev-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes jev-pulse {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
+
+/* Gmail's dark theme is independent of the OS setting, so the content script
+   measures the row background and sets this class. */
+.jev-dark .jev-cat { background: #35322e; color: #b9b4ac; }
+.jev-dark .jev-pri { background: #302d2a; color: #a9a49c; }
+.jev-dark .jev-pri.jev-Normal { background: #1e2a44; color: #9dbcfb; }
+.jev-dark .jev-pri.jev-High { background: #3a2f14; color: #fbbf24; }
+.jev-dark .jev-m { color: #8b867f; }
+.jev-dark .jev-m.jev-mid { color: #f0a142; }
+.jev-dark .jev-m.jev-hot { color: #fb923c; }
+.jev-dark .jev-pending { color: #6f6a64; }
+
+/* Narrow windows: drop the two percentages, keep the labels. */
+@media (max-width: 1150px) {
+  td.jev-host { padding-right: 150px !important; }
+  .jev-badges .jev-m { display: none; }
+}
+
+/* Unread rows render their subject bold; keep the badges at normal weight. */
+tr.zA .jev-badges,
+tr.zE .jev-badges { font-weight: 400; }

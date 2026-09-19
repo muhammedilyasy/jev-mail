@@ -1,0 +1,468 @@
+:root {
+  --bg: #ffffff;
+  --bg-sunken: #fafaf9;
+  --header: #f5f5f4;
+  --line: #ececea;
+  --line-strong: #dedddb;
+  --ink: #1c1b1a;
+  --ink-2: #57544f;
+  --ink-3: #8d8a87;
+  --accent: #c2410c;
+  --accent-soft: #fff1e8;
+  --blue: #1d4ed8;
+  --blue-soft: #e6eefc;
+  --amber: #a16207;
+  --amber-soft: #fdf3dc;
+  --gray-soft: #f2f2f0;
+  --focus: #1c1b1a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171615;
+    --bg-sunken: #1c1b19;
+    --header: #201f1d;
+    --line: #2b2a27;
+    --line-strong: #3a3835;
+    --ink: #f0eeea;
+    --ink-2: #b4afa7;
+    --ink-3: #85807a;
+    --accent: #fb923c;
+    --accent-soft: #3a2314;
+    --blue: #93b4f8;
+    --blue-soft: #1d2a45;
+    --amber: #fbbf24;
+    --amber-soft: #3a2f14;
+    --gray-soft: #2a2825;
+    --focus: #f0eeea;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Rules like `label { display: block }` otherwise override the attribute. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- top bar ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+
+.brand svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-right: auto;
+}
+
+.chip {
+  background: var(--gray-soft);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.chip b { color: var(--ink); font-weight: 600; }
+.chip.hot { background: var(--accent-soft); color: var(--accent); }
+.chip.hot b { color: var(--accent); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ---------- controls ---------- */
+
+input[type="search"],
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  padding: 5px 9px;
+}
+
+input[type="search"] { width: 210px; }
+
+textarea { width: 100%; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+button {
+  font: inherit;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  padding: 5px 12px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ink);
+}
+
+button.primary { background: var(--ink); color: var(--bg); font-weight: 500; }
+button.primary:hover { opacity: .88; }
+button.primary[data-state="running"] { background: var(--accent); color: #fff; }
+
+button.ghost { border-color: var(--line-strong); color: var(--ink-2); }
+button.ghost:hover { background: var(--bg-sunken); color: var(--ink); }
+
+button.danger-ghost { border: 1px solid var(--line-strong); color: #b91c1c; }
+button.danger-ghost:hover { background: #fef2f2; }
+
+button.icon {
+  padding: 5px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-color: transparent;
+}
+button.icon:hover { background: var(--gray-soft); }
+button.icon svg {
+  width: 17px; height: 17px;
+  fill: none; stroke: var(--ink-2);
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+.linkish {
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- progress + status ---------- */
+
+.progress { height: 2px; background: transparent; }
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width .25s ease;
+}
+
+.statusline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 16px;
+  color: var(--ink-3);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-sunken);
+}
+
+/* ---------- onboarding ---------- */
+
+#onboarding {
+  margin: 20px auto;
+  max-width: 680px;
+  padding: 20px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--bg-sunken);
+}
+#onboarding h2 { margin: 0 0 4px; font-size: 15px; }
+#onboarding p { margin: 0 0 14px; color: var(--ink-2); }
+#onboarding ol { margin: 0; padding-left: 18px; color: var(--ink-2); }
+#onboarding li { margin-bottom: 8px; }
+#onboarding code {
+  background: var(--gray-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  word-break: break-all;
+}
+#onboarding .cta { margin-top: 16px; display: flex; gap: 8px; }
+
+/* ---------- table ---------- */
+
+main { flex: 1; overflow: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--header);
+  border-bottom: 1px solid var(--line-strong);
+  text-align: left;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 7px 12px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+th.sortable { cursor: pointer; }
+th.sortable:hover { color: var(--ink); }
+th[data-dir]::after { content: " ↑"; color: var(--ink-3); }
+th[data-dir="desc"]::after { content: " ↓"; }
+/* The subject column carries the date sort but has no label, so name it
+   only while it is the active sort. */
+th.col-subject[data-dir]::before { content: "Date"; }
+
+.col-sender { width: 230px; }
+.col-category { width: 118px; }
+.col-priority { width: 96px; }
+.col-num { width: 78px; }
+
+tbody tr { border-bottom: 1px solid var(--line); }
+tbody tr:hover { background: var(--bg-sunken); }
+
+tbody td {
+  padding: 13px 12px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+td.sender { color: var(--ink-2); }
+td.sender .dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: var(--ink-3);
+}
+
+td.subject { color: var(--ink); }
+tr.unread td.subject { font-weight: 600; }
+td.category { color: var(--ink-2); }
+
+.pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  background: var(--gray-soft);
+  color: var(--ink-2);
+}
+.pill.Normal { background: var(--blue-soft); color: var(--blue); }
+.pill.High { background: var(--amber-soft); color: var(--amber); }
+
+.metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.metric .rail {
+  position: relative;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.metric .rail i {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ink-3);
+  border-radius: 2px;
+}
+.metric.mid .rail i { background: #d97706; }
+.metric.hot .rail i { background: var(--accent); }
+.metric.hot { color: var(--accent); }
+
+.waiting { color: var(--ink-3); }
+.waiting .sk {
+  display: inline-block;
+  width: 34px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--line);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: .5 } 50% { opacity: 1 } }
+
+td.failed { color: #b91c1c; font-size: 11.5px; }
+
+.more-row td {
+  text-align: center;
+  padding: 16px 12px;
+  color: var(--ink-3);
+  background: var(--bg-sunken);
+}
+.more-row span { margin-right: 10px; }
+.more-row button { margin-left: 4px; }
+
+.empty {
+  text-align: center;
+  color: var(--ink-3);
+  padding: 48px 20px;
+}
+
+/* ---------- dialogs ---------- */
+
+dialog {
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  width: min(620px, 92vw);
+}
+dialog::backdrop { background: rgba(20, 18, 16, .35); }
+
+dialog h2 { margin: 0; padding: 18px 20px 12px; font-size: 15px; border-bottom: 1px solid var(--line); }
+
+dialog form { display: block; }
+
+fieldset {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+  padding: 16px 20px;
+}
+legend {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-3);
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+label:last-child { margin-bottom: 0; }
+label input, label select, label textarea { width: 100%; margin-top: 5px; }
+label .row { display: flex; gap: 6px; margin-top: 5px; }
+label .row input { margin-top: 0; }
+label .row button { flex: none; }
+
+label.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+label.check input {
+  width: auto;
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+label.check .hint { margin-top: 3px; }
+
+.hint {
+  display: block;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+.hint code, .kv code {
+  background: var(--gray-soft);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.hint a { color: var(--accent); }
+
+.test-result { display: block; font-size: 11.5px; margin-top: 5px; }
+.test-result.ok { color: #15803d; }
+.test-result.bad { color: #b91c1c; }
+
+.kv { margin: 10px 0; display: grid; gap: 6px; }
+.kv div { display: flex; gap: 8px; align-items: baseline; font-size: 11.5px; }
+.kv span { color: var(--ink-3); min-width: 92px; }
+.kv code { user-select: all; word-break: break-all; }
+
+dialog footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 20px;
+}
+dialog .spacer { flex: 1; }
+
+#logbody {
+  margin: 0;
+  padding: 16px 20px;
+  max-height: 50vh;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  color: var(--ink-2);
+}
