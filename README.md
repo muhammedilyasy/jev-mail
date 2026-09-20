@@ -89,7 +89,7 @@ Settings worth knowing:
   to **0** to fetch every message the query matches. There is no hard ceiling —
   the practical limits are time and Gmail's quota, not the extension. A full
   20,000-message inbox is roughly 20 minutes of fetching plus 20 minutes of
-  classifying at the default concurrency, and about $0.25 of Jev usage. The table
+  classifying at the default concurrency, and about $1.70 of Jev usage. The table
   renders 400 rows at a time so a large inbox stays responsive.
 - **Parallel requests** — Jev allows 1,200 requests/minute; raise this to go
   faster, lower it if you see 429s.
@@ -99,40 +99,72 @@ Settings worth knowing:
 
 ## How the classification works
 
-One request per email carries all four questions. Jev ingests the state once and
-evaluates the questions against it in parallel, so four questions cost about what
-one costs:
+Spam is never asked as a question. Jev reads instructions literally and gets
+worse when one question hides several judgments
+([jaggedness](https://docs.typesafe.ai/model-jaggedness/jev-1.13)), and "is this
+spam, a scam, or phishing?" hides three. A genuine *"your payment failed, your
+account will be suspended"* notice from Google Cloud reads exactly like a
+phishing template, and scored 86% spam under that one question.
+
+So each email gets six narrow questions in one request — Jev ingests the state
+once and answers them in parallel:
 
 ```json
 POST https://api.typesafe.ai/v1/systemone
 {
   "model": "jev-latest",
   "state": {
-    "from_name": "OpenAI",
-    "from_address": "noreply@openai.com",
-    "subject": "Review needed: safety identifier activity",
-    "received": "Fri, 18 Sep 2026 09:12:00 +0000",
-    "preview": "We noticed unusual activity on your account…"
+    "from_name": "Google Cloud",
+    "from_address": "CloudPlatform-noreply@google.com",
+    "subject": "[Action Required] Your billing account has been suspended",
+    "preview": "We were unable to process your payment…",
+    "gmail_tab": "Updates"
   },
   "questions": {
-    "category": { "type": "choice", "instructions": "Which single category…", "criteria": { "Work": "…", "Security": "…" } },
-    "priority": { "type": "choice", "instructions": "How urgently…",        "criteria": { "Low": "…", "Normal": "…", "High": "…" } },
-    "spam":     { "type": "noul",   "instructions": "Is this email unsolicited spam, a scam, or a phishing attempt?" },
-    "reply":    { "type": "noul",   "instructions": "Does this email need a written reply from the recipient?" }
+    "category":        { "type": "choice", "criteria": { "Work": "…", "Finance": "…", "Security": "…" } },
+    "priority":        { "type": "choice", "criteria": { "Low": "…", "Normal": "…", "High": "…" } },
+    "deceptive":       { "type": "noul", "instructions": "Is this email trying to trick the recipient…" },
+    "unsolicited":     { "type": "noul", "instructions": "Is this unsolicited bulk mail…" },
+    "official_domain": { "type": "noul", "instructions": "Is the sender's address on an official domain of…" },
+    "service_notice":  { "type": "noul", "instructions": "Is this an automated notice about an account… the recipient uses?" },
+    "reply":           { "type": "noul", "instructions": "Is a specific person waiting for the recipient to write back?" }
   }
 }
 ```
 
-Choice answers come back with a probability distribution and a confidence score
-(shown on hover). Noul answers come back as a 0–1 probability, which is what the
-Spam and Reply columns render.
+**Code combines them**, in `compose()` in `src/common/jev.js`, together with two
+facts Gmail already knows and Jev cannot see:
 
-Only **metadata** is sent: sender name and address, subject, date, and Gmail's
-~200-character preview snippet. Message bodies are never fetched.
+- **Did the sender pass DMARC?** Gmail records this in `Authentication-Results`.
+  A pass means the From domain really sent the mail.
+- **Is it in Gmail's spam folder?**
 
-Cost is tiny — Jev bills $42 per billion input tokens and nothing for output. A
-200-email pass is a fraction of a cent; the running total is shown in the status
-line while it classifies.
+The rules, all of them readable and unit-tested:
+
+| Rule | Why |
+| ---- | --- |
+| DMARC pass **and** official domain → scam score drops ~80% | Both together are what clears an alarming but genuine notice |
+| Lookalike domain keeps its score even on a DMARC pass | `google-cloud-billing.co` passes DMARC for *its own* domain |
+| DMARC fail on an official-looking domain → scam score raised | Someone is forging that brand's address |
+| Unsolicited is damped by how much it reads as a service notice | Bulk mail about a service you use is not junk |
+| In Gmail's spam folder → at least 90% | Gmail's filter is better than ours |
+| `noreply@` → Reply % capped at 3% | Nobody is waiting. `notifications@` is **not** capped: GitHub and Linear turn an emailed reply into a comment |
+| Cold outreach damps Reply % | Sales email is written to look like it wants an answer |
+| Spam ≥ 50% → Priority forced to Low | Junk never outranks real mail |
+
+Hover the **Spam** cell for the breakdown behind any score:
+`scam/phishing 12% · unsolicited 3% · service notice 94% · official domain 97% · sender verified by Gmail`.
+
+Every stored result records which rubric produced it, so changing the questions —
+or editing your categories — makes the next run re-score automatically.
+
+Only **metadata** is sent: sender name and address, subject, Gmail's
+~200-character preview, and which Gmail tab it is in. Message bodies are never
+fetched.
+
+Cost: Jev bills $42 per billion input tokens and nothing for output. The rubric
+is about 2,000 tokens per email, so roughly **9 cents per 1,000 emails**. The
+running total and elapsed time appear in the status line.
 
 ## How the Gmail overlay works
 

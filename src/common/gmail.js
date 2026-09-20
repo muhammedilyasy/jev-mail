@@ -2,7 +2,15 @@ import { getToken, invalidateToken } from './auth.js';
 import { matchKey } from './key.js';
 
 const BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
-const META_HEADERS = ['From', 'To', 'Subject', 'Date', 'List-Unsubscribe'];
+const META_HEADERS = ['From', 'To', 'Subject', 'Date', 'List-Unsubscribe', 'Authentication-Results'];
+
+const CATEGORY_LABELS = {
+  CATEGORY_PERSONAL: 'Primary',
+  CATEGORY_UPDATES: 'Updates',
+  CATEGORY_PROMOTIONS: 'Promotions',
+  CATEGORY_SOCIAL: 'Social',
+  CATEGORY_FORUMS: 'Forums'
+};
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -72,6 +80,34 @@ export async function listMessageIds({ query, limit, onProgress, signal }) {
   return ids.slice(0, limit);
 }
 
+/**
+ * Did the From domain pass DMARC? Gmail stamps the verdict into
+ * Authentication-Results; a pass means the domain in From really sent it.
+ * Returns true/false when Gmail recorded a verdict, null when it didn't.
+ */
+export function senderVerified(payload, fromEmail) {
+  const domain = (fromEmail.split('@')[1] || '').toLowerCase();
+  const results = (payload?.headers || [])
+    .filter((h) => h.name.toLowerCase() === 'authentication-results')
+    .map((h) => h.value);
+  if (!domain || !results.length) return null;
+
+  let sawVerdict = false;
+  for (const value of results) {
+    const dmarc = value.match(/\bdmarc=(\w+)/i);
+    if (!dmarc) continue;
+    sawVerdict = true;
+    const headerFrom = (value.match(/header\.from=([^\s;)]+)/i)?.[1] || '').toLowerCase();
+    if (dmarc[1].toLowerCase() === 'pass' && (!headerFrom || headerFrom === domain)) return true;
+  }
+  return sawVerdict ? false : null;
+}
+
+function gmailCategory(labelIds) {
+  for (const id of labelIds) if (CATEGORY_LABELS[id]) return CATEGORY_LABELS[id];
+  return null;
+}
+
 function headerMap(payload) {
   const out = {};
   for (const h of payload?.headers || []) out[h.name.toLowerCase()] = h.value;
@@ -99,13 +135,14 @@ export async function getMessage(id, { signal } = {}) {
   const from = parseAddress(headers.from || '');
 
   const subject = headers.subject || '(no subject)';
+  const labelIds = msg.labelIds || [];
 
   return {
     id: msg.id,
     threadId: msg.threadId,
     matchKey: matchKey(from.email, subject),
     internalDate: Number(msg.internalDate || 0),
-    labelIds: msg.labelIds || [],
+    labelIds,
     fromName: from.name,
     fromEmail: from.email,
     to: headers.to || '',
@@ -113,6 +150,9 @@ export async function getMessage(id, { signal } = {}) {
     date: headers.date || '',
     snippet: decodeEntities(msg.snippet || ''),
     hasUnsubscribe: Boolean(headers['list-unsubscribe']),
+    senderVerified: senderVerified(msg.payload, from.email),
+    gmailCategory: gmailCategory(labelIds),
+    gmailSpam: labelIds.includes('SPAM'),
     result: null,
     status: 'pending',
     error: null

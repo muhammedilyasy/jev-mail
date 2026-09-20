@@ -6,7 +6,7 @@
 //      on screen), so they comfortably fit a worker's lifetime.
 
 import { loadSettings } from '../common/settings.js';
-import { classify } from '../common/jev.js';
+import { classify, rubricId, explainSpam } from '../common/jev.js';
 import { getByMatchKeys, putEmails } from '../common/db.js';
 
 const DASHBOARD_URL = chrome.runtime.getURL('src/dashboard/dashboard.html');
@@ -41,16 +41,14 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 /* ------------------------------------------------------- overlay messaging */
 
-const summarize = (row) =>
-  row?.result
-    ? {
-        category: row.result.category,
-        priority: row.result.priority,
-        spam: row.result.spam,
-        reply: row.result.reply,
-        confidence: row.result.categoryConfidence
-      }
-    : null;
+const summarize = (result) => ({
+  category: result.category,
+  priority: result.priority,
+  spam: result.spam,
+  reply: result.reply,
+  confidence: result.categoryConfidence,
+  why: explainSpam(result)
+});
 
 async function handleMessage(msg) {
   const settings = await loadSettings();
@@ -64,11 +62,13 @@ async function handleMessage(msg) {
   }
 
   if (msg.type === 'overlay:lookup') {
+    // A result from an older rubric is treated as missing, so the row gets
+    // re-scored on sight instead of showing a stale verdict.
+    const current = rubricId(settings.categories);
     const found = await getByMatchKeys(msg.keys || []);
     const results = {};
     for (const [key, row] of found) {
-      const summary = summarize(row);
-      if (summary) results[key] = summary;
+      if (row.result?.rubric === current) results[key] = summarize(row.result);
     }
     return { results };
   }
@@ -95,10 +95,14 @@ async function handleMessage(msg) {
               subject: item.subject,
               snippet: item.snippet,
               date: item.date || '',
-              hasUnsubscribe: false
+              hasUnsubscribe: false,
+              // The page can't see Authentication-Results, so DMARC stays unknown.
+              senderVerified: null,
+              gmailCategory: item.gmailCategory || null,
+              gmailSpam: item.gmailSpam === true
             };
-            const result = await classify(settings, email, msg.ownerEmail || '', {});
-            results[item.matchKey] = summarize({ result });
+            const result = await classify(settings, email);
+            results[item.matchKey] = summarize(result);
             rows.push({
               id: `dom:${item.matchKey}`,
               threadId: item.threadId || null,
@@ -112,6 +116,9 @@ async function handleMessage(msg) {
               date: item.date || '',
               snippet: item.snippet,
               hasUnsubscribe: false,
+              senderVerified: null,
+              gmailCategory: email.gmailCategory,
+              gmailSpam: email.gmailSpam,
               result,
               status: 'done',
               error: null

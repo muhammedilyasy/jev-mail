@@ -1,5 +1,5 @@
 import { getProfile, listMessageIds, getMessage } from './gmail.js';
-import { classify } from './jev.js';
+import { classify, rubricId } from './jev.js';
 import { getEmailIds, putEmail, putEmails, getAllEmails, deleteEmails } from './db.js';
 
 /** Bounded worker pool. One item failing never takes the run down. */
@@ -118,8 +118,11 @@ async function reconcileOverlayRows() {
  * Send every unclassified row to Jev. `rows` defaults to everything in the DB
  * that has no result yet.
  */
-export async function classifyAll(settings, { rows, ownerEmail, onEvent, signal }) {
-  const targets = (rows || (await getAllEmails())).filter((r) => !r.result);
+export async function classifyAll(settings, { rows, onEvent, signal }) {
+  // A result scored under an older rubric (or before the user edited their
+  // categories) counts as unclassified.
+  const current = rubricId(settings.categories);
+  const targets = (rows || (await getAllEmails())).filter((r) => r.result?.rubric !== current);
 
   if (!targets.length) {
     onEvent({ type: 'stage', stage: 'idle', text: 'Everything is already classified.' });
@@ -133,7 +136,7 @@ export async function classifyAll(settings, { rows, ownerEmail, onEvent, signal 
   let inputTokens = 0;
 
   const classifyOne = async (email) => {
-    const result = await classify(settings, email, ownerEmail, { signal });
+    const result = await classify(settings, email, { signal });
     const updated = { ...email, result, status: 'done', error: null };
     await putEmail(updated);
     inputTokens += result.inputTokens || 0;

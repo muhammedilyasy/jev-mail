@@ -1,7 +1,7 @@
 import { loadSettings, saveSettings, DEFAULT_CATEGORIES, DEFAULTS } from '../common/settings.js';
 import { getToken, signOut, invalidateToken, redirectUrl } from '../common/auth.js';
 import { getAllEmails, clearEmails } from '../common/db.js';
-import { listModels } from '../common/jev.js';
+import { listModels, explainSpam } from '../common/jev.js';
 import { syncInbox, classifyAll } from '../common/pipeline.js';
 
 const $ = (id) => document.getElementById(id);
@@ -160,7 +160,6 @@ async function doSync() {
 async function doClassify() {
   const stats = await classifyAll(state.settings, {
     rows: [...state.emails.values()],
-    ownerEmail: state.ownerEmail,
     onEvent: handleEvent,
     signal: state.controller.signal
   });
@@ -417,6 +416,7 @@ function fillResult(tr, row) {
 
   spam.className = 'col-num';
   spam.replaceChildren(metric(row.result.spam));
+  spam.title = explainSpam(row.result);
 
   reply.className = 'col-num';
   reply.replaceChildren(metric(row.result.reply));

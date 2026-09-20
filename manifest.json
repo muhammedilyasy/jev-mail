@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jev Mail \u2014 AI inbox triage",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Triage your Gmail with TypeSafe's Jev model: category, priority, spam % and reply % for every message.",
   "minimum_chrome_version": "116",
   "permissions": [

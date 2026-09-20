@@ -2,18 +2,18 @@
 // except in the Authorization header of a request to api.typesafe.ai.
 
 export const DEFAULT_CATEGORIES = [
-  { name: 'Work', description: 'Colleagues, clients, projects, meetings, anything job related.' },
-  { name: 'Personal', description: 'Friends, family and private matters.' },
-  { name: 'Finance', description: 'Payments, invoices, receipts, payouts, banking, taxes, subscriptions being billed.' },
-  { name: 'Shopping', description: 'Orders, shipping and delivery updates for things the recipient bought.' },
-  { name: 'Marketing', description: 'Promotions, cold outreach, sales pitches, discounts and offers.' },
-  { name: 'Newsletter', description: 'Recurring editorial or product-update mail the recipient subscribed to.' },
-  { name: 'Social', description: 'Notifications from social networks, forums and community platforms.' },
-  { name: 'Security', description: 'Sign-in alerts, verification codes, password resets, account and infrastructure warnings.' },
-  { name: 'Support', description: 'Help desk tickets, service and vendor status, technical issues.' },
-  { name: 'Events', description: 'Invitations, calendar items, conferences, webinars and RSVPs.' },
-  { name: 'Travel', description: 'Flights, hotels, bookings and itineraries.' },
-  { name: 'Other', description: 'Does not fit any other category.' }
+  { name: 'Work', description: 'Colleagues, clients and partners writing about projects, deliverables or meetings, plus notifications from work tools such as GitHub, Linear, Jira, Slack or Notion, and terms or policy updates from tools used for work. Not money (Finance), not account access (Security), not a service that is broken (Support).' },
+  { name: 'Personal', description: 'Friends, family and private life. Nothing to do with work or with any company.' },
+  { name: 'Finance', description: 'Money: invoices, receipts, payments taken or failed, payouts, refunds, bank and card activity, subscription charges and renewals, cloud or SaaS bills, budget alerts and tax. Choose Finance whenever the subject is a charge, bill, refund or payout, even if the sender is a work tool.' },
+  { name: 'Shopping', description: 'Things the recipient bought: order confirmations, shipping and delivery updates, returns and exchanges.' },
+  { name: 'Marketing', description: 'Anyone selling something: promotions, discounts, product launches, event or webinar promotion, and cold sales outreach — including from companies the recipient already uses. Choose Marketing over Newsletter when the point of the email is to sell.' },
+  { name: 'Newsletter', description: 'Recurring content the recipient subscribed to for its own sake: editorial newsletters, product changelogs, digests and roundups.' },
+  { name: 'Social', description: 'Social networks and community platforms: mentions, replies, comments, follows, friend requests and forum threads on X, LinkedIn, Instagram, Reddit, Discord and the like.' },
+  { name: 'Security', description: 'Who can get into an account: sign-in and new-device alerts, verification and two-factor codes, password resets, suspicious activity warnings, API key or permission changes, and phishing or scam attempts. Choose Security over every other category when the email is about account access.' },
+  { name: 'Support', description: 'Something needs fixing or is degraded: support tickets and their replies, bug reports, vendor incident and outage notices, and warnings that a domain, quota, integration or configuration is failing.' },
+  { name: 'Events', description: 'Scheduling and attendance: calendar invitations, RSVPs, meeting confirmations and reminders, and conferences or webinars the recipient signed up for. If the email is selling tickets or seats, choose Marketing.' },
+  { name: 'Travel', description: 'Flights, hotels, car hire, itineraries, check-in reminders and travel disruption.' },
+  { name: 'Other', description: 'Nothing above fits.' }
 ];
 
 export const DEFAULTS = {

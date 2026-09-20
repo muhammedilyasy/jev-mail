@@ -48,6 +48,19 @@
 
   /* ------------------------------------------------------------- extraction */
 
+  const TABS = { personal: 'Primary', updates: 'Updates', promotions: 'Promotions', social: 'Social', forums: 'Forums' };
+
+  // Which list is on screen, from Gmail's URL: #spam, #category/promotions, ...
+  // Only claims what the URL actually says; anything else stays unknown.
+  function currentView() {
+    const hash = decodeURIComponent(location.hash || '').toLowerCase();
+    const tab = hash.match(/^#category\/(\w+)/)?.[1];
+    return {
+      gmailSpam: hash.startsWith('#spam') || /\bin:spam\b/.test(hash),
+      gmailCategory: (tab && TABS[tab]) || null
+    };
+  }
+
   function readRow(row) {
     const senderEl = row.querySelector(SEL.sender);
     const subjectEl = row.querySelector(SEL.subject);
@@ -61,6 +74,7 @@
     const snippet = (snippetEl?.textContent || '').replace(/^[\s ]*[-–—][\s ]*/, '').trim();
 
     return {
+      ...currentView(),
       matchKey: matchKey(fromEmail, subject),
       fromEmail,
       fromName: senderEl.getAttribute('name') || (senderEl.textContent || '').trim() || fromEmail,
@@ -117,9 +131,14 @@
     group.append(
       chip('jev-cat', summary.category, summary.confidence != null ? `confidence ${Math.round(summary.confidence * 100)}%` : ''),
       chip(`jev-pri jev-${summary.priority}`, summary.priority, 'Priority'),
-      metric('S', summary.spam ?? 0),
+      withTitle(metric('S', summary.spam ?? 0), summary.why),
       metric('R', summary.reply ?? 0)
     );
+  }
+
+  function withTitle(el, extra) {
+    if (extra) el.title = `${el.title}\n${extra}`;
+    return el;
   }
 
   function clearBadges() {
